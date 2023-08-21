@@ -1,4 +1,4 @@
-import React, { Children, Component } from 'react';
+import React, { Component } from 'react';
 import { Button } from 'Button/Button';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Loader } from './Loader/Loader';
