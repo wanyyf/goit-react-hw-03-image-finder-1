@@ -1,15 +1,25 @@
-import React from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-export const Modal = ({ image, handleClick }) => {
-  return (
-    <div className="Overlay" onClick={e => handleClick(e)}>
-      <div className="Modal">
-        <img src={image.src} alt={image.alt} />
+export class Modal extends Component {
+  componentDidMount() {
+    document.addEventListener('keydown', this.handleEscKeyPress);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.handleEscKeyPress);
+  }
+  render() {
+    const { image, handleClick } = this.props;
+    return (
+      <div className="Overlay" onClick={e => handleClick(e)}>
+        <div className="Modal">
+          <img src={image.src} alt={image.alt} />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
+}
+
 Modal.propTypes = {
   image: PropTypes.object.isRequired,
   handleClick: PropTypes.func.isRequired,

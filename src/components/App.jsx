@@ -1,14 +1,15 @@
 import React, { Component } from 'react';
-import { Button } from 'Button/Button';
+import { Button } from 'components/Button/Button';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Loader } from './Loader/Loader';
-import Searchbar from './Searchbar/Searchbar';
+import { Searchbar } from './Searchbar/Searchbar';
 import { getDataApi } from '../services/dataApi';
 import { Modal } from './Modal/Modal';
 
 export class App extends Component {
   state = {
     images: [],
+
     params: {
       q: '',
       page: 1,
@@ -17,6 +18,7 @@ export class App extends Component {
     isLoading: false,
     isModalOpen: false,
     selectedImage: null,
+    hasMoreImages: true,
   };
   async componentDidMount() {
     this.setState({ isLoading: true });
@@ -30,17 +32,49 @@ export class App extends Component {
       this.setState({ isLoading: false });
     }
   }
+  async componentDidUpdate(prevProps, prevState) {
+    if (this.state.params.page !== prevState.params.page) {
+      try {
+        const apiImages = await getDataApi(this.state.params);
+        this.setState(prevState => ({
+          images: [...prevState.images, ...apiImages.hits],
+        }));
+        if (apiImages.hits.length < 12) {
+          this.setState({ hasMoreImages: false });
+        }
+      } catch (error) {
+        console.error('Error loading more images:', error);
+      } finally {
+        this.setState({ isLoading: false });
+      }
+    }
+    if (this.state.params.q !== prevState.params.q) {
+      try {
+        const apiImages = await getDataApi(this.state.params);
+        this.setState({ images: apiImages.hits });
+        if (apiImages.hits.length < 12) {
+          this.setState({ hasMoreImages: false });
+        }
+      } catch (error) {
+        console.error('Error fetching images:', error);
+      } finally {
+        this.setState({ isLoading: false });
+      }
+    }
+  }
+
   onModalOpen = e => {
     const src = e.target.src;
     const alt = e.target.alt;
     const selectedImage = { src, alt };
-    document.addEventListener('keydown', this.handleEscKeyPress);
+
     this.setState({ selectedImage, isModalOpen: true });
   };
+
   onModalClose = e => {
     this.setState({ isModalOpen: false });
-    document.removeEventListener('keydown', this.handleEscKeyPress);
   };
+
   handleEscKeyPress = event => {
     if (event.keyCode === 27) {
       this.onModalClose();
@@ -49,56 +83,34 @@ export class App extends Component {
       this.onModalClose();
     }
   };
+
   onSearchButton = e => {
     e.preventDefault();
     const SearchQuary = e.currentTarget.search.value;
 
-    this.setState(
-      {
-        isLoading: true,
-        params: {
-          ...this.state.params,
-          q: SearchQuary,
-          page: 1,
-        },
+    this.setState({
+      isLoading: true,
+      params: {
+        ...this.state.params,
+        q: SearchQuary,
+        page: 1,
       },
-      async () => {
-        try {
-          const apiImages = await getDataApi(this.state.params);
-          this.setState({ images: apiImages.hits });
-        } catch (error) {
-          console.error('Error fetching images:', error);
-        } finally {
-          this.setState({ isLoading: false });
-        }
-      }
-    );
+    });
   };
+
   onLoadMoreButton = () => {
     this.setState({ isLoading: true });
-    this.setState(
-      prevState => ({
-        params: {
-          ...prevState.params,
-          page: prevState.params.page + 1,
-        },
-      }),
-      async () => {
-        try {
-          const apiImages = await getDataApi(this.state.params);
-          this.setState(prevState => ({
-            images: [...prevState.images, ...apiImages.hits],
-          }));
-        } catch (error) {
-          console.error('Error loading more images:', error);
-        } finally {
-          this.setState({ isLoading: false });
-        }
-      }
-    );
+    this.setState(prevState => ({
+      params: {
+        ...prevState.params,
+        page: prevState.params.page + 1,
+      },
+    }));
   };
+
   render() {
-    const { isLoading, images, isModalOpen, selectedImage } = this.state;
+    const { isLoading, images, isModalOpen, selectedImage, hasMoreImages } =
+      this.state;
     return (
       <div className="App">
         <Searchbar onSearchButton={this.onSearchButton} />
@@ -120,8 +132,10 @@ export class App extends Component {
             ) : null}
             {this.state.params.q !== '' && this.state.images.length === 0 ? (
               <span className="nothingSpan">We can`t find anything!</span>
-            ) : (
+            ) : hasMoreImages ? (
               <Button onLoadMoreButton={this.onLoadMoreButton} />
+            ) : (
+              <span className="nothingSpan">Thats all!</span>
             )}
           </>
         )}
