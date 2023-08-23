@@ -32,32 +32,25 @@ export class App extends Component {
       this.setState({ isLoading: false });
     }
   }
+
   async componentDidUpdate(prevProps, prevState) {
-    if (this.state.params.page !== prevState.params.page) {
+    if (
+      this.state.params.page !== prevState.params.page ||
+      this.state.params.q !== prevState.params.q
+    ) {
       try {
         const apiImages = await getDataApi(this.state.params);
         this.setState(prevState => ({
-          images: [...prevState.images, ...apiImages.hits],
+          images:
+            this.state.params.page !== prevState.params.page
+              ? [...prevState.images, ...apiImages.hits]
+              : apiImages.hits,
+          hasMoreImages:
+            apiImages.hits.length < 12 ? false : this.state.hasMoreImages,
+          isLoading: false,
         }));
-        if (apiImages.hits.length < 12) {
-          this.setState({ hasMoreImages: false });
-        }
       } catch (error) {
-        console.error('Error loading more images:', error);
-      } finally {
-        this.setState({ isLoading: false });
-      }
-    }
-    if (this.state.params.q !== prevState.params.q) {
-      try {
-        const apiImages = await getDataApi(this.state.params);
-        this.setState({ images: apiImages.hits });
-        if (apiImages.hits.length < 12) {
-          this.setState({ hasMoreImages: false });
-        }
-      } catch (error) {
-        console.error('Error fetching images:', error);
-      } finally {
+        console.error('Error:', error);
         this.setState({ isLoading: false });
       }
     }

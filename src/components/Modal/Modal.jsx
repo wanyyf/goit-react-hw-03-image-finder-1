@@ -3,10 +3,10 @@ import PropTypes from 'prop-types';
 
 export class Modal extends Component {
   componentDidMount() {
-    document.addEventListener('keydown', this.handleEscKeyPress);
+    document.addEventListener('keydown', this.props.handleClick);
   }
   componentWillUnmount() {
-    document.removeEventListener('keydown', this.handleEscKeyPress);
+    document.removeEventListener('keydown', this.props.handleClick);
   }
   render() {
     const { image, handleClick } = this.props;
